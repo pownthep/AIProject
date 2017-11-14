@@ -1,8 +1,12 @@
 // <editor-fold defaultstate="collapsed" desc="Imports">
+import OtsuThresholder.OtsuThresholder;
 import java.awt.Graphics2D;
 import java.awt.Color;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
+import java.awt.image.DataBuffer;
+import java.awt.image.DataBufferByte;
+import java.awt.image.Raster;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -33,7 +37,7 @@ public class UI extends javax.swing.JFrame {
     // Browser
     public final JFileChooser fc = new JFileChooser();
     public static BufferedImage resizedImage;
-    public static String rename, line, mode, imageFormat = "Best";
+    public static String rename, line, mode;
     public static File[] input;
     public static String[] output;
     /**
@@ -72,8 +76,6 @@ public class UI extends javax.swing.JFrame {
         Browse = new javax.swing.JButton();
         jComboBox1 = new javax.swing.JComboBox<>();
         ocrImagePromptLabel1 = new javax.swing.JLabel();
-        jComboBox2 = new javax.swing.JComboBox<>();
-        jLabel1 = new javax.swing.JLabel();
         Browse1 = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
@@ -113,16 +115,6 @@ public class UI extends javax.swing.JFrame {
 
         ocrImagePromptLabel1.setText("Mode:");
 
-        jComboBox2.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Best", "Black & White", "Grayscale", "Both" }));
-        jComboBox2.setToolTipText("");
-        jComboBox2.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jComboBox2ActionPerformed(evt);
-            }
-        });
-
-        jLabel1.setText("Image Processing:");
-
         Browse1.setText("Run");
         Browse1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -139,39 +131,32 @@ public class UI extends javax.swing.JFrame {
                 .addGroup(ocrPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(ocrPanelLayout.createSequentialGroup()
                         .addGroup(ocrPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(ocrScrollPane, javax.swing.GroupLayout.PREFERRED_SIZE, 400, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(ocrResponseLabel))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addGroup(ocrPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(ocrPanelLayout.createSequentialGroup()
-                                .addGroup(ocrPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(ocrScrollPane, javax.swing.GroupLayout.PREFERRED_SIZE, 400, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(ocrResponseLabel))
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addGroup(ocrPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addGroup(ocrPanelLayout.createSequentialGroup()
-                                        .addComponent(ocrSourceImageLabel)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 447, Short.MAX_VALUE))
-                                    .addComponent(ocrImage, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-                            .addGroup(ocrPanelLayout.createSequentialGroup()
-                                .addGroup(ocrPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(ocrTitleLabel)
-                                    .addComponent(ocrInstructionLabel))
-                                .addGap(0, 0, Short.MAX_VALUE)))
-                        .addContainerGap())
+                                .addComponent(ocrSourceImageLabel)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 447, Short.MAX_VALUE))
+                            .addComponent(ocrImage, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                     .addGroup(ocrPanelLayout.createSequentialGroup()
-                        .addComponent(ocrImagePromptLabel)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(ocrImageUriTextBox, javax.swing.GroupLayout.PREFERRED_SIZE, 240, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(Browse)
-                        .addGap(7, 7, 7)
-                        .addComponent(ocrImagePromptLabel1)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jComboBox1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(jLabel1)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jComboBox2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(61, 61, 61)
-                        .addComponent(Browse1)
-                        .addGap(21, 21, 21))))
+                        .addGroup(ocrPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(ocrTitleLabel)
+                            .addComponent(ocrInstructionLabel)
+                            .addGroup(ocrPanelLayout.createSequentialGroup()
+                                .addComponent(ocrImagePromptLabel)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(ocrImageUriTextBox, javax.swing.GroupLayout.PREFERRED_SIZE, 240, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(Browse)
+                                .addGap(7, 7, 7)
+                                .addComponent(ocrImagePromptLabel1)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(jComboBox1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(18, 18, 18)
+                                .addComponent(Browse1)))
+                        .addGap(0, 0, Short.MAX_VALUE)))
+                .addContainerGap())
         );
         ocrPanelLayout.setVerticalGroup(
             ocrPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -187,8 +172,6 @@ public class UI extends javax.swing.JFrame {
                     .addComponent(Browse)
                     .addComponent(jComboBox1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(ocrImagePromptLabel1)
-                    .addComponent(jComboBox2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel1)
                     .addComponent(Browse1))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(ocrPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
@@ -238,11 +221,6 @@ public class UI extends javax.swing.JFrame {
         System.out.println("Mode: " + mode);
     }//GEN-LAST:event_jComboBox1ActionPerformed
 
-    private void jComboBox2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jComboBox2ActionPerformed
-        // TODO add your handling code here:
-        imageFormat = (String)jComboBox2.getSelectedItem();
-    }//GEN-LAST:event_jComboBox2ActionPerformed
-
     private void Browse1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_Browse1ActionPerformed
         // TODO add your handling code here:
         runOCR();
@@ -262,49 +240,18 @@ public class UI extends javax.swing.JFrame {
                 System.out.println("File: " + input[i].getName() + " loading.........");
                 expectedOutput = input[i].getName().toUpperCase().replace(".JPG","");
                 ocrImageUriTextBox.setText(input[i].getParent());
-                /*ocrResponseTextArea.append(
-                        "---------- Progress " + (i+1) + " ----------\n" +
-                        "File Input: " + input[i].getCanonicalPath() + "\n");*/
-                
-                if(imageFormat.equals("Best")) {
-                    adjustImage(bImage);
-                    if(rename.equals(expectedOutput)) {
-                        count = count + 1;
-                        output[i] = rename;
-                    }
-                    else {
-                        imageFormat = "Grayscale";
-                        adjustImage(bImage);
-                        if(rename.equals(expectedOutput)) {
-                            count = count + 1;
-                            output[i] = rename;
-                        }
-                        else {
-                            imageFormat = "Both";
-                            adjustImage(bImage);
-                            if(rename.equals(expectedOutput)) {
-                                count = count + 1;
-                                output[i] = rename;
-                            }
-                        }
-                    }
+                 
+                adjustImage(bImage);
+                if(rename.equals(expectedOutput)) {
+                    count = count + 1;
+                    output[i] = rename;
                 }
-                else {
-                    adjustImage(bImage);
-                    if(rename.equals(expectedOutput)) {
-                        count = count + 1;
-                        output[i] = rename;
-                    }
-                }
-                /*ocrResponseTextArea.append(
-                        "File Output: " + savePicture(bImage, name)+ "\n" + 
-                                "--------------------------------------" + "\n");*/
+                    
                 if(i==input.length-1){
                     resizedImage = null;
                     ocrResponseTextArea.append("\n-------------- Finish --------------\n");
                     ocrResponseTextArea.append("Total output: " + (i+1) + "\n");
-                    ocrResponseTextArea.append("Accuracy: " + (count * 100.0)/((i+1)*1.0)+ "%\n" + "Count: " + count +"\n" + Arrays.toString(output) + "\nImage Processing: " + imageFormat);
-                    //ocrResponseTextArea.append(actualOutput[0].equals(expectedOutput[0]+"") + "");
+                    ocrResponseTextArea.append("Accuracy: " + (count * 100.0)/((i+1)*1.0)+ "%\n" + "Count: " + count +"\n" + Arrays.toString(output));
                 }
             }   
         } catch(IOException e) {
@@ -382,6 +329,28 @@ public class UI extends javax.swing.JFrame {
     private void adjustImage(BufferedImage bImage){
         //Resize picture
         int w = 544; int h = 408;
+        //grayscale
+        for(int i=0; i<bImage.getHeight(); i++){
+            for(int j=0; j<bImage.getWidth(); j++){
+                Color c = new Color(bImage.getRGB(j, i));
+                double red = (c.getRed() * 0.299);
+                double green = (c.getGreen() * 0.587);
+                double blue = (c.getBlue() * 0.114);
+                int rgb =(int) (red+green+blue);
+                Color newColor = new Color(rgb,rgb,rgb);
+                bImage.setRGB(j,i,newColor.getRGB());
+            }
+        }
+        //get threshold
+        Raster raster = bImage.getData();
+        DataBuffer buffer = raster.getDataBuffer();
+        DataBufferByte byteBuffer = (DataBufferByte) buffer;
+        byte[] srcData = byteBuffer.getData(0);
+        byte[] dstData = new byte[srcData.length];
+        OtsuThresholder thresholder = new OtsuThresholder();
+        int threshold = thresholder.doThreshold(srcData, dstData);
+        
+        //resize image
         resizedImage = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2d = resizedImage.createGraphics();
         g2d.drawImage(bImage, 0, 0, w, h, null);
@@ -390,77 +359,27 @@ public class UI extends javax.swing.JFrame {
         //BufferedImage croppedImage = resizedImage.getSubimage(210, 0, 334, 270);
         int width = resizedImage.getWidth();
         int height = resizedImage.getHeight();
-        // convert to grayscale
-        if(imageFormat.equals("Grayscale")){
-            for(int i=0; i<height; i++){
-                for(int j=0; j<width; j++){
-                    Color c = new Color(resizedImage.getRGB(j, i));
-                    double red = (c.getRed() * 0.299);
-                    double green = (c.getGreen() * 0.587);
-                    double blue = (c.getBlue() * 0.114);
+        
+        //black and white
+        for(int i=0; i<height; i++){
+           for(int j=0; j<width; j++){
+                Color c = new Color(resizedImage.getRGB(j, i));
+                if(c.getRed()<=threshold&&c.getGreen()<=threshold&&c.getBlue()<=threshold){
+                    int red = 0; 
+                    int green = 0;
+                    int blue = 0;
                     int rgb =(int) (red+green+blue);
                     Color newColor = new Color(rgb,rgb,rgb);
                     resizedImage.setRGB(j,i,newColor.getRGB());
-                }
-            }
-        }
-        else if(imageFormat.equals("Black & White")) {
-            //black & white
-            for(int i=0; i<height; i++){
-                for(int j=0; j<width; j++){
-                    Color c = new Color(resizedImage.getRGB(j, i));
-                    if(c.getRed()<=70&&c.getGreen()<=70&&c.getBlue()<=70){
-                        int red = 0; 
-                        int green = 0;
-                        int blue = 0;
-                        int rgb =(int) (red+green+blue);
-                        Color newColor = new Color(rgb,rgb,rgb);
-                        resizedImage.setRGB(j,i,newColor.getRGB());
-                    }else{
-                        int red = 85; 
-                        int green = 85;
-                        int blue = 85;
-                        int rgb =(int) (red+green+blue);
-                        Color newColor = new Color(rgb,rgb,rgb);
-                        resizedImage.setRGB(j,i,newColor.getRGB());
-                    }    
-                }
-            }
-        }
-        else {
-            //grayscale
-            for(int i=0; i<height; i++){
-                for(int j=0; j<width; j++){
-                    Color c = new Color(resizedImage.getRGB(j, i));
-                    double red = (c.getRed() * 0.299);
-                    double green = (c.getGreen() * 0.587);
-                    double blue = (c.getBlue() * 0.114);
+                }else{
+                    int red = 85; 
+                    int green = 85;
+                    int blue = 85;
                     int rgb =(int) (red+green+blue);
                     Color newColor = new Color(rgb,rgb,rgb);
                     resizedImage.setRGB(j,i,newColor.getRGB());
-                }
-            }
-            //black and white
-            for(int i=0; i<height; i++){
-                for(int j=0; j<width; j++){
-                    Color c = new Color(resizedImage.getRGB(j, i));
-                    if(c.getRed()<=70&&c.getGreen()<=70&&c.getBlue()<=70){
-                        int red = 0; 
-                        int green = 0;
-                        int blue = 0;
-                        int rgb =(int) (red+green+blue);
-                        Color newColor = new Color(rgb,rgb,rgb);
-                        resizedImage.setRGB(j,i,newColor.getRGB());
-                    }else{
-                        int red = 85; 
-                        int green = 85;
-                        int blue = 85;
-                        int rgb =(int) (red+green+blue);
-                        Color newColor = new Color(rgb,rgb,rgb);
-                        resizedImage.setRGB(j,i,newColor.getRGB());
                     }    
                 }
-            }
         }
         tesseract(resizedImage);
         scaleAndShowImage(resizedImage, ocrImage);
@@ -565,8 +484,6 @@ public class UI extends javax.swing.JFrame {
     private javax.swing.JButton Browse;
     private javax.swing.JButton Browse1;
     private javax.swing.JComboBox<String> jComboBox1;
-    private javax.swing.JComboBox<String> jComboBox2;
-    private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel ocrImage;
     private javax.swing.JLabel ocrImagePromptLabel;
     private javax.swing.JLabel ocrImagePromptLabel1;
